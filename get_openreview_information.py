@@ -49,17 +49,17 @@ def get_content(request, retries=3, delay=1):#获取information
 #         })
 #     return {i: filtered_notes}
 
-def process_ids(ids, key, json_path, batch_size=10):#批量处理论文id,获取information
+def process_ids(ids, key, json_path, batch_size=10):
     final_content = {}
     count = 0
     for the_id in tqdm(ids):
         request = creat_request(the_id, key)
         try:
             content = get_content(request)
-            #filtered_content = filter_content(the_id, json.loads(content))
-            final_content.update(content)
+            file_content = {the_id: content}
+            final_content.update(file_content)
             count += 1
-            time.sleep(random.uniform(1, 3)) #防止请求过多
+            time.sleep(random.uniform(1, 3))  # Random delay between requests
             
             if count % batch_size == 0:
                 # 读取现有的 JSON 文件内容
@@ -78,6 +78,20 @@ def process_ids(ids, key, json_path, batch_size=10):#批量处理论文id,获取
                 final_content = {}  # 清空 final_content 以便处理下一批次
         except Exception as e:
             print(f"Failed to process ID {the_id}: {e}")
+    
+    # 写入最后一批不满 batch_size 的 final_content
+    if final_content:
+        if os.path.exists(json_path):
+            with open(json_path, 'r', encoding='utf-8') as json_file:
+                existing_content = json.load(json_file)
+            existing_content.update(final_content)
+        else:
+            existing_content = final_content
+        
+        with open(json_path, 'w', encoding='utf-8') as json_file:
+            json.dump(existing_content, json_file, ensure_ascii=False, indent=4)
+        
+        print(f"Processed and wrote remaining {count % batch_size} IDs to {json_path}")
 
 key="oral"
 input_path = r"data\oral.json"
