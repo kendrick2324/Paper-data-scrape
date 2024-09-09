@@ -37,7 +37,7 @@ def get_content(request, retries=3, delay=1):#获取information
             delay *= 2  # Exponential backoff
     raise Exception("Failed to fetch content after multiple retries")
 
-# def filter_content(i, data):#过滤数据，只保留title和abstract  
+# def filter_content(i, data):#过滤下载到的paper information数据，只保留title和abstract,现不再使用
 #     filtered_notes = []
 #     for note in data.get('notes', []):
 #         content = note.get('content', {})
@@ -49,7 +49,7 @@ def get_content(request, retries=3, delay=1):#获取information
 #         })
 #     return {i: filtered_notes}
 
-def process_ids(ids, key, json_path, batch_size=10):
+def process_ids(ids, key, json_path, batch_size=100):#依据id列表获取information并写入json文件
     final_content = {}
     count = 0
     for the_id in tqdm(ids):
@@ -61,7 +61,7 @@ def process_ids(ids, key, json_path, batch_size=10):
             count += 1
             time.sleep(random.uniform(1, 3))  # Random delay between requests
             
-            if count % batch_size == 0:
+            if count % batch_size == 0:#分批写入，防止程序异常中断导致数据丢失
                 # 读取现有的 JSON 文件内容
                 if os.path.exists(json_path):
                     with open(json_path, 'r', encoding='utf-8') as json_file:
