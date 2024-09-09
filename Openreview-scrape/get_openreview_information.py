@@ -65,7 +65,10 @@ def process_ids(ids, key, json_path, batch_size=10):
                 # 读取现有的 JSON 文件内容
                 if os.path.exists(json_path):
                     with open(json_path, 'r', encoding='utf-8') as json_file:
-                        existing_content = json.load(json_file)
+                        try:
+                            existing_content = json.load(json_file)
+                        except json.JSONDecodeError:
+                            existing_content = {}
                     existing_content.update(final_content)
                 else:
                     existing_content = final_content
