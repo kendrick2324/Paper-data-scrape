@@ -4,13 +4,15 @@ import urllib.request
 import os
 import re
 
-client = AzureOpenAI(
+#此程序主要用于根据文章摘要、标题、关键词判断文章是否与LLM相关，并下载相关的文章
+
+client = AzureOpenAI(#这里是Azure的API
         api_key='c33c373d2a2b4757a185f17b90ad80a4',  # replace with your actual API key
         api_version='2023-12-01-preview',
         azure_endpoint='https://yuehuang-trustllm-3.openai.azure.com/'
     )
 
-def get_completion(prompt):
+def get_completion(prompt):#这里是调用Azure的API
     messages=[{"role": "user", "content": prompt}] 
     response = client.chat.completions.create(
         model='yuehuang-gpt4o',
@@ -19,7 +21,7 @@ def get_completion(prompt):
     )
     return response.choices[0].message.content
 
-def creat_request(i):
+def creat_request(i):#用于创建下载pdf的request
     base_url='https://openreview.net/pdf?id='
     url=base_url+i
     headers = {
@@ -31,13 +33,13 @@ def creat_request(i):
     request=urllib.request.Request(url=url,headers=headers)
     return request
 
-def get_content(request):
+def get_content(request):#用于获取pdf内容，辅助下载
     response = urllib.request.urlopen(request)
-    content = response.read()  # .decode('utf-8')#解码格式错误=========================================
+    content = response.read() 
     return content
 
-def sanitize_filename(filename):
-    # 移除非法字符，保证下载路径正确
+def sanitize_filename(filename):#用于取出每个文章名中的非法字符，保持下载地址的有效性
+    # 移除非法字符
     filename = re.sub(r'[\\/*?:"<>|]', "", filename)
     # 限制文件名长度
     return filename[:255]
@@ -54,54 +56,69 @@ def down_load(content, path, title):#这个存放pdf的path要提前写好
     except Exception as e:
         print(f"文件 {path} 下载失败: {e}")
 
-file_path=[r"data\temp_oral_output.json",r"data\temp_poster_output.json",r"data\temp_spotlight_output.json",r"data\temp_reject_output.json",r"data\temp.json"]
+def extract_llm_related(json_string):#用于从答案的json中提取LLM_related字段
+    match = re.search(r'"LLM_related"\s*:\s*"(\w+)"', json_string)
+    if match:
+        return match.group(1)
+    return None
 
-with open(file_path[4], 'r',encoding='utf-8') as json_file:#读取存档论文信息的json文件
+#这个字典取决于你本地的标题，摘要，关键词信息的存放位置，需要修改！！！
+file_path=[r"data\ver_2\temp_oral_output.json",r"data\ver_2\temp_poster_output.json",r"data\ver_2\temp_spotlight_output.json",r"data\ver_2\temp_reject_output.json",r"data\ver_2\temp.json",r"data\ver_2\temp_1.json"]
+
+with open(file_path[2], 'r',encoding='utf-8') as json_file:
     data = json.load(json_file)
-    path=r"E:\ICLR_2024\paper\temp_spotlight"#存放pdf的路径
-    error_path="data\error_spotlight.txt"
+    path=r"E:\ICLR_2024\paper\temp_spotlight"#存放pdf的地址，需要修改！！！
+    error_path="data\error_oral.txt"#存放下载错误paper名的地址，需要修改！！！
+    #result_path=r"data\result_spotlight_2.txt" #测试大模型效果时使用，不用管
     failed_list = []
     results=[]   
-    for paper_id, paper_content in data.items():#取出json文件中论文标，摘要，关键词
+    for paper_id, paper_content in data.items():#遍历每篇文章
         paper_data = json.loads(paper_content)
-        for note in paper_data['notes']:
+        for note in paper_data['notes']:#此处的title，abstract，keywords取决于你本地的json文件的结构，需要修改！！！
             title = note['content']['title']['value']
             abstract = note['content']['abstract']['value']
             keywords = note['content']['keywords']['value']
         file_content = {"title": title, "abstract": abstract, "keywords": keywords}
         prompt=f"""
-        You will be given the title ,abstract and keywords of a paper. 
-        Your task is to determine whether each paper is directly related to large language models (LLMs). 
-        A paper is considered directly related to LLMs if it:
-            Uses an LLM as a tool or a key part of its method.
-            Explores or investigates properties or attributes of LLMs.
-            Uses variations or multimodal models based on LLMs, such as MLLMs ,Flamingo or any-to-any LLMs.
-        Do not count papers that only focus on foundational areas such as transformers, deep learning, reinforcement learning, efficient fine-tuning , conventional visual language models without LLM module unless there is a clear, explicit link to LLMs in the content.\
-        The output for each paper should be a figure of 0 or 1, where 1 means the paper is directly related to LLMs, and 0 means it is not.Do not add any additional information or context to the response.\
+        Your task is to analyze each paper's title, abstract, and keywords to determine whether the paper is directly related to large language models (LLMs). Follow these steps for each paper:
+
+        1.Check for LLM Usage: Does the paper use an LLM as a tool or a core part of its methodology?
+        2.Check for Exploration of LLM Properties: Does the paper explore or investigate any properties, characteristics, or attributes of LLMs?
+        3.Check for LLM Variations or Multimodal Models: Does the paper use any variations or multimodal models based on LLMs, such as MLLMs, Flamingo, or any-to-any LLMs?
+        If any of these criteria are met, mark the paper as related to LLMs.
+
+However, do not consider the paper as LLM-related if:
+
+It focuses solely on foundational areas like transformers, deep learning, reinforcement learning, efficient fine-tuning, or conventional visual-language models without an explicit link to LLMs.
+
+For each paper, think step by step. After considering the information, provide a conclusion in JSON format with "yes" (LLM-related) or "no" (not LLM-related).
 
 Input format:
-{{"title": "the paper's title", "abstract": "the paper's abstract", "keywords": "the paper's keywords"}}
+{{
+    "title": the paper's title,"abstract": the paper's abstract,"keywords": the paper's keywords
+}}
 
-Output:
-0 or 1
+Output format:
+{{
+  "reasoning": "[step-by-step reasoning]",
+  "LLM_related": "yes/no"
+}}
 
 Here is the information for the paper:{file_content}
         """
-        ans=get_completion(prompt)
-        if ans=='0' or ans==0:#如果不是LLM相关的文章，就不下载
-            continue
-        else:#如果是LLM相关的文章，就下载
+        ans = get_completion(prompt)#获取大模型输出
+        llm_related = extract_llm_related(ans)  # 使用正则表达式提取LLM_related字段
+        if llm_related == "yes":#大模型判断论文属于LLM_related
             request = creat_request(paper_id)
             try:
                 paper_content = get_content(request)
             except Exception as e:
                 print(f"error: {e}")
-                failed_list.append(paper_id)#记录下载失败的文章
+                failed_list.append(paper_id)
                 continue
             down_load(paper_content,path,title)
-
-                   
-    if len(failed_list) > 0:#如果有下载失败的文章，就把失败的文章id写入error文件
+        
+    if len(failed_list) > 0:#存在下载失败的paper
         print(f"Failed to download {len(failed_list)} papers: {failed_list}")
         if not os.path.exists(os.path.dirname(error_path)):
             os.makedirs(os.path.dirname(error_path))
