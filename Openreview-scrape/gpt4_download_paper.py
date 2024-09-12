@@ -65,13 +65,13 @@ def extract_llm_related(json_string):#用于从答案的json中提取LLM_related
 #这个字典取决于你本地的标题，摘要，关键词信息的存放位置，需要修改！！！
 file_path=[r"data\ver_2\temp_oral_output.json",r"data\ver_2\temp_poster_output.json",r"data\ver_2\temp_spotlight_output.json",r"data\ver_2\temp_reject_output.json",r"data\ver_2\temp.json",r"data\ver_2\temp_1.json"]
 
-with open(file_path[2], 'r',encoding='utf-8') as json_file:
+with open(file_path[0], 'r',encoding='utf-8') as json_file:
     data = json.load(json_file)
-    path=r"E:\ICLR_2024\paper\temp_spotlight"#存放pdf的地址，需要修改！！！
-    error_path="data\error_oral.txt"#存放下载错误paper名的地址，需要修改！！！
-    #result_path=r"data\result_spotlight_2.txt" #测试大模型效果时使用，不用管
-    failed_list = []
-    results=[]   
+    path=r"ICLR2024\paper\oral"#存放pdf的地址，需要修改！！！
+    error_path="error_oral.txt"#存放下载错误paper名的地址，需要修改！！！
+    papers_path=r"ICLR2024\paper\oral\papers.json"#存放下载成功paper名的地址，需要修改！！！
+    failed_list = []#下载失败的论文合集
+    papers={}#辅助统计下载成功的paper
     for paper_id, paper_content in data.items():#遍历每篇文章
         paper_data = json.loads(paper_content)
         for note in paper_data['notes']:#此处的title，abstract，keywords取决于你本地的json文件的结构，需要修改！！！
@@ -106,9 +106,9 @@ Output format:
 
 Here is the information for the paper:{file_content}
         """
-        ans = get_completion(prompt)#获取大模型输出
+        ans = get_completion(prompt)  # 获取大模型输出
         llm_related = extract_llm_related(ans)  # 使用正则表达式提取LLM_related字段
-        if llm_related == "yes":#大模型判断论文属于LLM_related
+        if llm_related == "yes":  # 大模型判断论文属于LLM_related
             request = creat_request(paper_id)
             try:
                 paper_content = get_content(request)
@@ -116,15 +116,22 @@ Here is the information for the paper:{file_content}
                 print(f"error: {e}")
                 failed_list.append(paper_id)
                 continue
-            down_load(paper_content,path,title)
-        
-    if len(failed_list) > 0:#存在下载失败的paper
+            title = down_load(paper_content, path, title)
+            papers[title] = paper_id  # 记录下载成功的paper
+
+    if len(failed_list) > 0:  # 存在下载失败的paper
         print(f"Failed to download {len(failed_list)} papers: {failed_list}")
         if not os.path.exists(os.path.dirname(error_path)):
             os.makedirs(os.path.dirname(error_path))
         with open(error_path, 'w', encoding='utf-8') as error_file:
             for item in failed_list:
                 error_file.write(f"{item}\n")
+
+    # 将下载成功的paper写入到papers_path对应的json文件中
+    if not os.path.exists(os.path.dirname(papers_path)):
+        os.makedirs(os.path.dirname(papers_path))
+    with open(papers_path, 'w', encoding='utf-8') as papers_file:
+        json.dump(papers, papers_file, ensure_ascii=False, indent=4)
             
 
 
