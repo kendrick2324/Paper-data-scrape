@@ -44,7 +44,7 @@ def sanitize_filename(filename):#用于取出每个文章名中的非法字符�
     # 限制文件名长度
     return filename[:255]
 
-def down_load(content, path, title):#这个存放pdf的path要提前写好
+def down_load(content, path, title):#这个存放pdf的path需要提前创建好！
     title = sanitize_filename(title)
     # 确保路径包含文件名
     if os.path.isdir(path):
@@ -62,19 +62,19 @@ def extract_llm_related(json_string):#用于从答案的json中提取LLM_related
         return match.group(1)
     return None
 
-#这个字典取决于你本地的标题，摘要，关键词信息的存放位置，需要修改！！！
+#这个字典取决于你本地的标题，摘要，关键词信息文件的存放位置，需要修改！！！
 file_path=[r"data\ver_2\temp_oral_output.json",r"data\ver_2\temp_poster_output.json",r"data\ver_2\temp_spotlight_output.json",r"data\ver_2\temp_reject_output.json",r"data\ver_2\temp.json",r"data\ver_2\temp_1.json"]
 
 with open(file_path[0], 'r',encoding='utf-8') as json_file:
     data = json.load(json_file)
-    path=r"ICLR2024\paper\oral"#存放pdf的地址，需要修改！！！
+    path=r"ICLR2024\paper\oral"#存放下载好pdf的地址，需要根据自己情况修改！！！
     error_path="error_oral.txt"#存放下载错误paper名的地址，需要修改！！！
     papers_path=r"ICLR2024\paper\oral\papers.json"#存放下载成功paper名的地址，需要修改！！！
     failed_list = []#下载失败的论文合集
     papers={}#辅助统计下载成功的paper
     for paper_id, paper_content in data.items():#遍历每篇文章
         paper_data = json.loads(paper_content)
-        for note in paper_data['notes']:#此处的title，abstract，keywords取决于你本地的json文件的结构，需要修改！！！
+        for note in paper_data['notes']:#此处的title，abstract，keywords的获取取决于你本地的json文件的结构，需要修改！！！
             title = note['content']['title']['value']
             abstract = note['content']['abstract']['value']
             keywords = note['content']['keywords']['value']
@@ -109,7 +109,7 @@ Here is the information for the paper:{file_content}
         ans = get_completion(prompt)  # 获取大模型输出
         llm_related = extract_llm_related(ans)  # 使用正则表达式提取LLM_related字段
         if llm_related == "yes":  # 大模型判断论文属于LLM_related
-            request = creat_request(paper_id)
+            request = creat_request(paper_id)#创建下载请求
             try:
                 paper_content = get_content(request)
             except Exception as e:
