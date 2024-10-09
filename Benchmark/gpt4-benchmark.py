@@ -22,8 +22,8 @@ def extract_all_text(pdf_path):
 def get_benchmark(para_content):
     if not para_content:
         return None
-
-    prompt=prompt=f"""
+    
+    prompt=f"""
         Now I will give you the content of the paper for you to analyze and answer some questions. 
         But first, I want you to know the following knowledge:
         
