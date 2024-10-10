@@ -79,7 +79,8 @@ Here is the information for the paper:{para_content}
         try:
             chat_completion = client.chat.completions.create(
                 model='yuehuang-gpt4o',
-                messages=content
+                messages=content,
+                temperature=0.1,
             )
 
             success = True
