@@ -39,8 +39,8 @@ def get_benchmark(para_content):
         4.Give the ethics statement: Does the paper include an ethics statement?
         
 After considering the information, you should first answer the question "whether the paper uses the benchmark" with "yes" or "no". If the paper uses the benchmark, you should answer the question "how does the paper use the benchmark" with a statement of all the benchmarks that are used and show the results in detail. Else you should answer that with "nothing".
-Then, you should answer the question "whether the paper generates a new benchmark via LLM" with "yes" or "no". If the paper generates a new benchmark via LLM, you should answer the question "how does the paper generate a new benchmark via LLM" with a statement of how does the paper use the LLM to generate benchmark and the reason why they use the LLM to generate and some other information. Else you should answer that with "nothing".
-After that, you should answer the question "whether the paper use LLM as a judge/metric" with "yes" or "no". If the paper uses LLM as a judge/metric, you should answer the question "how does the paper use LLM as a judge/metric" with a statement of what tasks does the paper use the LLM to evaluate, the reason why to use LLM and some other information. Else you should answer that with "nothing".
+Then, you should answer the question "whether the paper generates a new benchmark via LLM" with "yes" or "no". If the paper generates a new benchmark via LLM, you should answer the question "how does the paper generate a new benchmark via LLM" with a statement of how is LLM used. Else you should answer that with your reasoning.
+After that, you should answer the question "whether the paper use LLM as a judge/metric" with "yes" or "no". If the paper uses LLM as a judge/metric, you should answer the question "how does the paper use LLM as a judge/metric" with a statement of what tasks does the paper use the LLM to evaluate, the reason why to use LLM and some other information. Else you should answer that with your reasoning.
 Finally, you should answer the question "whether the paper includes an ethics statement" with "yes" or "no". If the paper includes an ethics statement, you should answer the question "the content of the ethics statement" with a summary of the content of the ethics statement.Else you should answer that with "nothing".
 Show your answers in JSON format like the Output format:
 
@@ -95,7 +95,7 @@ Here is the information for the paper:{para_content}
 #"ICLR2024/paper/oral"
 pdf_path="temp" #pdf文件存放路径
 pdf_files = glob.glob(os.path.join(pdf_path, "*.pdf"))
-result_txt_path="result3.txt" #结果保存路径
+result_txt_path="result1.txt" #结果保存路径
 
 for pdf_file in pdf_files:#遍历所有pdf
     para_content=extract_all_text(pdf_file)#先提取pdf文本
