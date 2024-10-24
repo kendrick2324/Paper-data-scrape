@@ -7,15 +7,12 @@ import re
 #此程序主要用于根据文章摘要、标题、关键词判断文章是否与LLM相关，并下载相关的文章
 
 client = AzureOpenAI(#这里是Azure的API
-        api_key='c33c373d2a2b4757a185f17b90ad80a4',  # replace with your actual API key
-        api_version='2023-12-01-preview',
-        azure_endpoint='https://yuehuang-trustllm-3.openai.azure.com/'
     )
 
 def get_completion(prompt):#这里是调用Azure的API
     messages=[{"role": "user", "content": prompt}] 
     response = client.chat.completions.create(
-        model='yuehuang-gpt4o',
+        model='',
         messages=messages,
         temperature=0,
     )
