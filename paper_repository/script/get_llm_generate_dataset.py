@@ -3,7 +3,8 @@ from config import *
 import os
 import re
 
-def extract_llm_generate_dataset(json_string):#用于从答案的json中提取LLM_related字段
+# Used to extract the LLM_related field from the answer json
+def extract_llm_generate_dataset(json_string):
     pattern = r'"datasets-generation-via-LLM":\s*"([^"]*)"'
     match = re.search(pattern, json_string)
     if match:

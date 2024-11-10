@@ -3,7 +3,8 @@ from config import *
 import os
 import re
 
-def extract_llm_related(json_string):#用于从答案的json中提取LLM_related字段
+# Used to extract the LLM_related field from the answer json
+def extract_llm_related(json_string):
     match = re.search(r'"LLM_related"\s*:\s*"(\w+)"', json_string)
     if match:
         return match.group(1)
@@ -49,7 +50,7 @@ Output format:
 
 Here is the information for the paper:{file_content}
 """
-            ans = get_completion(prompt)  # 获取大模型输出
+            ans = get_completion(prompt)  
             llm_related = extract_llm_related(ans)
             if llm_related == "yes":
                 llm_related_papers[title] = abstract
