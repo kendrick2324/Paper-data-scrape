@@ -60,4 +60,4 @@ Here is the information for the paper:{file_content}
     with open(out_path, 'w', encoding='utf-8') as json_file:
         json.dump(llm_related_papers, json_file, ensure_ascii=False, indent=4)
 
-filter_llm_related("ACL", "2024")
+filter_llm_related("NAACL", "2024")

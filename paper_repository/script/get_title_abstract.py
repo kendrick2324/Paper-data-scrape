@@ -8,6 +8,7 @@ import os
 import re
 import time
 from urllib.parse import urlparse, parse_qs
+import random
 
 # The 'year' in the url will be replaced with the actual year of the conference. (parameter)
 Openreview_urls={ 
@@ -72,7 +73,10 @@ def get_acl_file_count(url: str, conference_name:str, year:str, paper_type: str)
     soup = BeautifulSoup(response.content, 'html.parser')
     links = soup.find_all('a', href=True)
 
-    pattern = re.compile(rf'aclanthology\.org/{year}\.{conference_name}-{paper_type}\.\d+\.pdf')
+    if paper_type == 'findings':
+        pattern = re.compile(rf'aclanthology\.org/{year}\.{paper_type}-{conference_name}\.\d+\.pdf')
+    else:
+        pattern = re.compile(rf'aclanthology\.org/{year}\.{conference_name}-{paper_type}\.\d+\.pdf')
     matching_links = [link['href'] for link in links if pattern.search(link['href'])]
 
     return len(matching_links)
@@ -135,20 +139,21 @@ def increment_last_number_in_url(url: str) -> str:
     
     else:
         raise ValueError("URL does not match the expected format")
-
+    
 def get_info_acl(url):
-    try:
-        response = requests.get(url)
-        response.raise_for_status()  # 如果响应状态码不是200，会引发HTTPError异常
-        html_content = response.content
-        soup = BeautifulSoup(html_content, 'html.parser')
-
-        title = soup.find('meta', {'property': 'og:title'})['content']
-        abstract = soup.find('div', class_='card-body acl-abstract').find('span').text
-        
-    except requests.exceptions.RequestException as e:
-        title, abstract = None, None
-
+    response = requests.get(url)
+    soup = BeautifulSoup(response.content, 'html.parser')
+    
+    title_tag = soup.find('meta', {'property': 'og:title'})
+    title = title_tag['content'] if title_tag and 'content' in title_tag.attrs else 'No Title Found'
+    
+    abstract_div = soup.find('div', class_='card-body acl-abstract')
+    if abstract_div:
+        abstract_span = abstract_div.find('span')
+        abstract = abstract_span.text if abstract_span else 'Error'
+    else:
+        abstract = 'Error'
+    
     return title, abstract
 
 def download_paper_info(name:str,year:str,batch_size=10):
@@ -205,27 +210,40 @@ def download_paper_info(name:str,year:str,batch_size=10):
         types = ACL_types[name]
         base_url = "https://aclanthology.org/events/"
         specific_url="https://aclanthology.org/events/"+name.lower()+"-"+year+"/"
+        
         for type in types:
             cnt = 0
+            count = 0
             final_content = {}
             paper_nums = get_acl_file_count(specific_url,name.lower(),year,type)
             print(f"There are {paper_nums-1} {type} papers to be processed:")
             print("--------------------------------------------------------")
-            while cnt + 1 < paper_nums: 
-                url = f"https://aclanthology.org/{year}.{name.lower()}-{type}.{cnt+1}/"
-                title, abstract = get_info_acl(url)
-                if title:
-                    print(f"Processed: {title} successfully.")
-                file_content={title:abstract}
-                final_content.update(file_content)
+            
+            while cnt + 1 < paper_nums:
+                if type == 'findings':
+                    url = f"https://aclanthology.org/{year}.{type}-{name.lower()}.{cnt+1}/"
+                else:   
+                    url = f"https://aclanthology.org/{year}.{name.lower()}-{type}.{cnt+1}/"
+                attempt = 0
+                flag = False
+                while attempt < 3 and not flag:
+                    title, abstract = get_info_acl(url)
+                    if title != 'Error' and abstract != 'Error':
+                        print(f"Processed: {title} successfully.")
+                        file_content={title:abstract}
+                        final_content.update(file_content)
+                        count += 1
+                        flag = True
+                    else:
+                        attempt += 1
+                        continue
+                    time.sleep(random.uniform(1, 2))
                 cnt += 1
-                time.sleep(0.3)
-                
-                if cnt % batch_size == 0:
-                    write_to_outpath(final_content,cnt,out_path)
+                if count % batch_size == 0:
+                    write_to_outpath(final_content,count,out_path)
                     final_content = {}
             if final_content:
-                write_to_outpath(final_content,cnt,out_path)
+                write_to_outpath(final_content,count,out_path)
                 final_content = {}
                 
     elif name in CV_urls and name != "ECCV":
@@ -298,7 +316,7 @@ def download_paper_info(name:str,year:str,batch_size=10):
         print("The conference are not in the list.")
         return
 
-download_paper_info("ICLR","2024")    
+download_paper_info("EMNLP","2024")    
         
 # if __name__ == "__main__":
 #     if len(sys.argv) != 3:
