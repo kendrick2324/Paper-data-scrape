@@ -16,7 +16,7 @@ def filter_llm_generate_dataset(name:str, year:str):
     target_directory = os.path.join(current_directory, "LLM_Generate_Dataset")
     if not os.path.exists(target_directory):
         os.makedirs(target_directory)
-    in_path = current_directory + "\Title_and_Abstract\\"+ f"{name}{year}.json"
+    in_path = current_directory + "\LLM_Related\\"+ f"{name}{year}.json"
     out_path = os.path.join(target_directory, f"{name}{year}.json")
     llm_generate_dataset_papers = {}
     
