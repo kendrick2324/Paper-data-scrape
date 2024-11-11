@@ -1,6 +1,6 @@
 from zhipuai import ZhipuAI
 
-client = ZhipuAI(api_key="8abc0cf3f892ad7b0163ebbb2ae2086c.neA2Jey6S4cZX7wJ")
+client = ZhipuAI(api_key="")
 
 def get_completion(prompt):
     response = client.chat.completions.create(

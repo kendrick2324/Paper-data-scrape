@@ -49,16 +49,24 @@ Output format:
 }}
 
 Here is the information for the paper:{file_content}
-"""
-            ans = get_completion(prompt)  
-            llm_related = extract_llm_related(ans)
-            if llm_related == "yes":
-                llm_related_papers[title] = abstract
-                print(f"{title} is LLM_related")
-            else:
-                print(f"{title} is not LLM_related")
+""" 
+            attepmt = 0
+            flag = False
+            while flag == False and attepmt < 3:
+                ans = get_completion(prompt)
+                if ans != None:
+                    flag = True  
+                    llm_related = extract_llm_related(ans)
+                    if llm_related == "yes":
+                        llm_related_papers[title] = abstract
+                        print(f"{title} is LLM_related")
+                    else:
+                        print(f"{title} is not LLM_related")
+                else:
+                    attepmt += 1
+                    print(f"Attempt {attepmt+1} failed")
                 
     with open(out_path, 'w', encoding='utf-8') as json_file:
         json.dump(llm_related_papers, json_file, ensure_ascii=False, indent=4)
 
-filter_llm_related("NAACL", "2024")
+filter_llm_related("ECCV", "2024")

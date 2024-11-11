@@ -53,16 +53,23 @@ Output format:
 
 Here is the information for the paper:{file_content}
         """
-
-            ans = get_completion(prompt)  
-            llm_generate_dataset = extract_llm_generate_dataset(ans)
-            if llm_generate_dataset == "yes":
-                llm_generate_dataset_papers[title] = abstract
-                print(f"{title} uses LLM to generate new datasets.")
-            else:
-                print(f"{title} doesn't use LLM to generate new datasets.")
+            attempt = 0
+            flag = False
+            while flag == False and attempt < 3: 
+                ans = get_completion(prompt)
+                if ans != None:
+                    flag = True 
+                    llm_generate_dataset = extract_llm_generate_dataset(ans)
+                    if llm_generate_dataset == "yes":
+                        llm_generate_dataset_papers[title] = abstract
+                        print(f"{title} uses LLM to generate new datasets.")
+                    else:
+                        print(f"{title} doesn't use LLM to generate new datasets.")
+                else:
+                    attempt += 1
+                    print(f"Attempt {attempt+1} failed")
                 
     with open(out_path, 'w', encoding='utf-8') as json_file:
         json.dump(llm_generate_dataset_papers, json_file, ensure_ascii=False, indent=4)
 
-filter_llm_generate_dataset("ACL", "2024")
+filter_llm_generate_dataset("EMNLP", "2024")
