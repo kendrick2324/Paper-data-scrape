@@ -67,7 +67,7 @@ Here is the information for the paper:{file_content}
                         print(f"{title} doesn't use LLM to generate new datasets.")
                 else:
                     attempt += 1
-                    print(f"Attempt {attempt+1} failed")
+                    print(f"Attempt {attempt} failed")
                 
     with open(out_path, 'w', encoding='utf-8') as json_file:
         json.dump(llm_generate_dataset_papers, json_file, ensure_ascii=False, indent=4)
